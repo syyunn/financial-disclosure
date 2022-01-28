@@ -14,7 +14,16 @@ def scrape_one_periodoc_transaction_page(url):
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_experimental_option("detach", True)
-    global browser  # this will prevent the browser variable from being garbage collected
+    # for memory save
+    chrome_options.add_argument("start-maximized")
+    chrome_options.add_argument("disable-infobars")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-application-cache')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    ##
+
     from lobbyview.db import PostgresqlManager
 
     driver = webdriver.Chrome(
@@ -110,6 +119,8 @@ def scrape_one_periodoc_transaction_page(url):
                 pass
             else:
                 pass
+    driver.close()
+    driver.quit()
 
 
 if __name__ == "__main__":
@@ -125,8 +136,8 @@ order by date_received desc
     df = pm.convert_fetchall_to_pd(data)
     print(df)
     df.rename(columns={0: "report_type_url"}, inplace=True)
-    index = df.index[df['report_type_url'] == 'https://efdsearch.senate.gov//search/view/ptr/39701819-7165-4d51-a3d0-47ba61e239d6/'].tolist()
-
+    index = df.index[df['report_type_url'] == 'https://efdsearch.senate.gov//search/view/ptr/21f72e24-9365-46e8-8cfc-c5a5a2a4ca99/'].tolist()
+    print(index)
     for idx, row in enumerate(df.itertuples()):
         if idx >= index[0]:
             scrape_one_periodoc_transaction_page(row.report_type_url)
