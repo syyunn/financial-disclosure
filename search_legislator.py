@@ -3,6 +3,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 
 from bs4 import BeautifulSoup
+from dateutil import parser
 
 chrome_options = Options()
 chrome_options.add_experimental_option("detach", True)
@@ -37,24 +38,34 @@ import pandas as pd
 df = pd.DataFrame({
     'firstname': [],
     'last_name': [],
-    'periodic_transaction':[]
+    'office': [],
+    'report_type': [],
+    'report_type_url': [],
+    'date_received': []
 })
 
 
 def scrape_one_page(df, driver):
+    url_prefix = "https://efdsearch.senate.gov/"
     import time
     time.sleep(0.5)
     html = driver.page_source
     bs = BeautifulSoup(html, "html.parser")
-    table = bs.find("table", {"id":"filedReports"})
+    table = bs.find("table", {"id": "filedReports"})
     trs = table.find_all("tr")
     for tr in trs:
-        tr.find
-    hrefs = bs.find_all("a")
-    url_prefix = "https://efdsearch.senate.gov/"
-    for href in hrefs:
-        if 'Periodic' in href.text:
-            df.loc[len(df.index)] = [first_name, last_name, url_prefix + href['href']]
+        tds = tr.find_all("td")
+        if len(tds) > 0:
+            first_name = tds[0].text
+            last_name = tds[1].text
+            office = tds[2].text
+            report_type = tds[3].text
+            report_type_url = tds[3].find("a")['href']
+            date_received = parser.parse(tds[4].text)
+            df.loc[len(df.index)] = [first_name, last_name, office, report_type, url_prefix + report_type_url, date_received]
+            pass
+        else:
+            pass
 
     next_btn = driver.find_elements_by_css_selector('.paginate_button.next')[0]
     next_btn_disabled = driver.find_elements_by_css_selector('.paginate_button.next.disabled')
