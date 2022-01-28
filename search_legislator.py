@@ -24,7 +24,7 @@ def scrape_one_page(df, driver):
     trs = table.find_all("tr")
     for tr in trs:
         tds = tr.find_all("td")
-        if len(tds) > 0:
+        if len(tds) > 1:
             first_name = tds[0].text
             last_name = tds[1].text
             office = tds[2].text
@@ -53,18 +53,30 @@ def scrape_one_page(df, driver):
                     ),
                     commit=True,
                 )
+                print("insert", (
+                        first_name,
+                        last_name,
+                        office,
+                        report_type,
+                        url_prefix + report_type_url,
+                        date_received,
+                    ))
             except psycopg2.errors.UniqueViolation:
                 pass
             pass
         else:
             pass
+    try:
+        next_btn = driver.find_elements_by_css_selector(".paginate_button.next")[0]
+    except IndexError:
+        next_btn = None
 
-    next_btn = driver.find_elements_by_css_selector(".paginate_button.next")[0]
     next_btn_disabled = driver.find_elements_by_css_selector(
         ".paginate_button.next.disabled"
     )
     if len(next_btn_disabled) > 0:
         next_btn = None
+
     return next_btn
 
 
@@ -110,12 +122,11 @@ def scrape_insert_one_legislator(first_name, last_name):
 
 
 if __name__ == "__main__":
-    # from get_legislators import get_senators
-    #
-    # congress = 117
-    # list_of_senators = get_senators(n_th_congress=congress)
-    first_name = "David"
-    last_name = "Perdue"
+    from get_legislators import get_senators
+    congress = 117
+    list_of_senators_df = get_senators(n_th_congress=congress)
 
-    scrape_insert_one_legislator(first_name, last_name)
+    for row in list_of_senators_df.itertuples():
+        print(row.first_name, row.last_name)
+        scrape_insert_one_legislator(row.first_name,  row.last_name)
     pass
